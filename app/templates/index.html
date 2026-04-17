@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prédiction de Floraison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            background-color: #1a1a2e;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 70px, rgba(255, 193, 7, 0.03) 70px, rgba(255, 193, 7, 0.03) 140px),
+                repeating-linear-gradient(60deg, transparent, transparent 70px, rgba(255, 193, 7, 0.03) 70px, rgba(255, 193, 7, 0.03) 140px),
+                repeating-linear-gradient(120deg, transparent, transparent 70px, rgba(255, 193, 7, 0.03) 70px, rgba(255, 193, 7, 0.03) 140px);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255, 193, 7, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 152, 0, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            background: rgba(30, 35, 45, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 50px 60px;
+            max-width: 760px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #e8eaed;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.8em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 35px;
+        }
+
+        label {
+            display: block;
+            color: #b0b8c4;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            background: rgba(20, 25, 35, 0.6);
+            color: #e8eaed;
+            font-size: 1em;
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        input[type="date"]:focus,
+        input[type="number"]:focus {
+            border-color: #4a90e2;
+            background: rgba(20, 25, 35, 0.8);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(1) opacity(0.6);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .btn-validate {
+            width: 100%;
+            padding: 14px 24px;
+            background: #4a90e2;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 35px;
+        }
+
+        .btn-validate:hover { background: #357abd; }
+        .btn-validate:active { transform: translateY(1px); }
+        .btn-validate:disabled {
+            background: rgba(74, 144, 226, 0.3);
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.85em;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show { display: block; }
+
+        /* Zone de résultats */
+        .result-zone {
+            display: none;
+        }
+
+        .result-zone.show { display: block; }
+
+        .prediction-zone {
+            background: rgba(20, 25, 35, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 3px solid #4a90e2;
+            border-radius: 4px;
+            padding: 30px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .prediction-label {
+            color: #8b95a5;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .prediction-date {
+            color: #e8eaed;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .prediction-day {
+            color: #8b95a5;
+            font-size: 0.9em;
+            margin-top: 6px;
+        }
+
+        .graph-zone {
+            background: rgba(20, 25, 35, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .graph-zone img {
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        .graph-label {
+            color: #8b95a5;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .loading {
+            color: #8b95a5;
+            font-style: italic;
+            font-size: 0.9em;
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+        }
+
+        .loading.show { display: block; }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20%  { content: '.'; }
+            40%      { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prédiction de Floraison</h1>
+
+        <div class="form-group">
+            <label for="year-input">Année de prédiction</label>
+            <input type="number" id="year-input" min="2000" max="2100" placeholder="Ex: 2024" style="max-width: 200px;">
+        </div>
+
+        <div class="form-row" style="margin-bottom: 35px;">
+            <div class="form-group">
+                <label for="latitude-input">Latitude</label>
+                <input type="number" id="latitude-input" step="0.000001" min="-90" max="90" placeholder="Ex: 48.8566">
+            </div>
+            <div class="form-group">
+                <label for="longitude-input">Longitude</label>
+                <input type="number" id="longitude-input" step="0.000001" min="-180" max="180" placeholder="Ex: 2.3522">
+            </div>
+            <div class="form-group">
+                <label for="altitude-input">Altitude (m)</label>
+                <input type="number" id="altitude-input" step="1" min="0" max="4000" placeholder="Ex: 150">
+            </div>
+        </div>
+
+        <div class="error-message" id="error-message">
+            Veuillez remplir tous les champs (date, latitude, longitude et altitude)
+        </div>
+
+        <button type="button" class="btn-validate" id="btn-validate">
+            Calculer la prédiction
+        </button>
+
+        <div class="loading" id="loading">
+            Récupération des données météo et calcul en cours (peut prendre quelques secondes)
+        </div>
+
+        <div class="result-zone" id="result-zone">
+            <div class="prediction-zone">
+                <div class="prediction-label">Date moyenne prédite de floraison</div>
+                <div class="prediction-date" id="predicted-date">—</div>
+                <div class="prediction-day" id="predicted-day"></div>
+            </div>
+
+            <div class="graph-zone">
+                <div class="graph-label">Évolution de la prévision sur l'année</div>
+                <img id="prediction-graph" src="" alt="Graphique de prédiction">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/getprediction';
+
+        const yearInput      = document.getElementById('year-input');
+        const latInput       = document.getElementById('latitude-input');
+        const lonInput       = document.getElementById('longitude-input');
+        const altInput       = document.getElementById('altitude-input');
+        const btnValidate    = document.getElementById('btn-validate');
+        const errorMessage   = document.getElementById('error-message');
+        const loadingEl      = document.getElementById('loading');
+        const resultZone     = document.getElementById('result-zone');
+        const predictedDate  = document.getElementById('predicted-date');
+        const predictedDay   = document.getElementById('predicted-day');
+        const predictionGraph = document.getElementById('prediction-graph');
+
+        function validateInputs() {
+            const year = yearInput.value.trim();
+            const lat  = latInput.value.trim();
+            const lon  = lonInput.value.trim();
+            const alt  = altInput.value.trim();
+
+            errorMessage.textContent = 'Veuillez remplir tous les champs (année, latitude, longitude et altitude)';
+
+            if (!year || !lat || !lon || !alt) {
+                errorMessage.classList.add('show');
+                return false;
+            }
+
+            const yearVal = parseInt(year);
+            if (isNaN(yearVal) || yearVal < 2000 || yearVal > 2100) {
+                errorMessage.textContent = "L'année doit être comprise entre 2000 et 2100";
+                errorMessage.classList.add('show');
+                return false;
+            }
+
+            const latVal = parseFloat(lat);
+            const lonVal = parseFloat(lon);
+
+            if (isNaN(latVal) || latVal < -90 || latVal > 90) {
+                errorMessage.textContent = 'La latitude doit être comprise entre -90 et 90';
+                errorMessage.classList.add('show');
+                return false;
+            }
+            if (isNaN(lonVal) || lonVal < -180 || lonVal > 180) {
+                errorMessage.textContent = 'La longitude doit être comprise entre -180 et 180';
+                errorMessage.classList.add('show');
+                return false;
+            }
+
+            errorMessage.classList.remove('show');
+            return true;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T12:00:00');
+            return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        async function fetchPrediction() {
+            resultZone.classList.remove('show');
+            loadingEl.classList.add('show');
+            btnValidate.disabled = true;
+            btnValidate.textContent = 'Calcul en cours...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        year:      parseInt(yearInput.value),
+                        latitude:  parseFloat(latInput.value),
+                        longitude: parseFloat(lonInput.value),
+                        altitude:  parseFloat(altInput.value)
+                    })
+                });
+
+                if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+
+                const data = await response.json();
+
+                predictedDate.textContent = formatDate(data.predicted_date);
+                predictedDay.textContent  = `Jour ${data.jour_prevu} de l'année`;
+                predictionGraph.src       = 'data:image/png;base64,' + data.graph;
+
+                resultZone.classList.add('show');
+
+            } catch (error) {
+                errorMessage.textContent = 'Erreur lors du calcul : ' + error.message;
+                errorMessage.classList.add('show');
+                console.error(error);
+            } finally {
+                loadingEl.classList.remove('show');
+                btnValidate.disabled = false;
+                btnValidate.textContent = 'Calculer la prédiction';
+            }
+        }
+
+        btnValidate.addEventListener('click', () => {
+            if (validateInputs()) fetchPrediction();
+        });
+
+        [yearInput, latInput, lonInput, altInput].forEach(input => {
+            input.addEventListener('input', () => errorMessage.classList.remove('show'));
+        });
+    </script>
+</body>
+</html>
