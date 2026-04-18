@@ -1,3 +1,6 @@
+
+![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/planche-logo-floracle.jpg?raw=true)
+
 # Définition des objectifs
 
 Lors de l'implantation et du choix de la localisation d'un rucher, un apiculteur, qu'il soit amateur ou professionnel cherchera entre autres à déterminer les plantes dans un rayon d'environ 10 kms (rayon d'action maximum des butineuses) susceptibles de pouvoir fournir du pollen et du nectar, nécessaires au bon développement des colonies, mais aussi à la production de miel.
@@ -203,6 +206,8 @@ Le préprocessing des données intègre une normalisation (Standard Scaler) sur 
 | Forêt aléatoire | 105 | 2581 | 3.413736 | 7.036325 | 38.49 | 71.14 |
 | Gradient Boosting | 2 | 1776 | 4.604754 | 6.457499 | 42.76 | 74.35 |
 
+L’indicateur de performance RMSE est le plus pertinent. En effet, se tromper de 6 jours sur la date de floraison, c'est acceptable. Se tromper de 15 jours, c'est potentiellement manquer complètement la période favorable de pose des hausses. Le RMSE, en pénalisant quadratiquement, reflète cette réalité : les grandes erreurs sont disproportionnellement problématiques.
+
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/comparaison-mae.png?raw=true)
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/comparaison-rmse.png?raw=true)
 
@@ -217,13 +222,18 @@ La forme ressemble à une cloche centrée autour de 0, ce qui indique un comport
 L'écart entre les performances en entraînement et validation fait apparaitre un risque d'overfitting modéré:  le modèle a mémorisé une partie du bruit d'entraînement, sans pour autant s'effondrer en validation.
 Le RMSE qui grimpe plus fort que la MAE (+40% vs +44% — proches ici) confirme que la validation produit davantage d'erreurs importantes que le train, ce qui est visible sur le troisième graphique, ou pour le dire autrement le modèle gère moins bien les cas rares, ce qui est attendu. Une évolution des modèles pourrait consister à chercher à réduire ce surapprentissage en entraînant les modèles avec davantage de données ou avec d'autres hyperparamètres. 
 
-Afin de valider l’intérêt de la démarche en machine learning par rapport aux approches traditionnelles j’ai appliqué le modèle GDD (le plus employé) aux données du jeu de validation. Voici les performances constatées : 
+
+Afin de valider l’intérêt de la démarche en Machine Learning par rapport aux approches traditionnelles j’ai appliqué la méthode GDD (la plus employée) aux données du jeu de validation et comparé les performances avec le meilleur modèle : 
+Voici les performances constatées : 
 | Modèle | MAE | RMSE |
 | ------ | ----------------- | ------------------- |
 | Modèle GDD | 8.13 | 10.32 |
 | Gradient Boosting | 4.89 | 6.47 |
 
-Il est à noter que le modèle GDD a été paramétré avec un hyperparamètre de seuil moyen, ses résultats pourraient donc être meilleurs avec un paramétrage local. Cela démontre cependant l’efficacité de l’usage d’une démarche en machine learning, surtout en ce qui concerne les capacités de généralisation.
+Pour mieux appréhender ces résultats il convient de prendre en considération :
+•	La variance biologique : sur un même ensemble de plantations des variances de plus de 5 jours peuvent être constatés dans la floraison. Ceci s’explique par des facteurs difficilement mesurables : âge de la vigne, composition des sols, microtopographie…
+•	Seuil moyen GDD : le calcul de performance sur la méthode GDD a été effectué avec un hyperparamètre de seuil moyen. Les résultats pourraient donc être meilleurs avec un paramétrage issu d’un historique de données locales à chaque site. Cela démontre cependant l’efficacité de l’usage d’une démarche en Machine Learning dans un contexte de généralisation.
+
 
 # Cas pratiques
 
@@ -245,10 +255,8 @@ L'application Flask présente dans le dossier app/ permet de tester des préditi
 Execution : "python3 main.app"
 
 # Critique et amélioration
-Il pourrait être intéressant d’ajouter au jeu de donnée d’entraînement d’autres variables qui pourraient avoir un impact sur la phénologie, comme le taux d’humidité, la photopériode (durée du jour en heures), taux journalier de GDD (calcule la vitesse du réchauffement, pas uniquement le réchauffement cumulé), précipitations cumulées, amplitude thermique jour/nuit… 
+Une recherche d’optimisation pourrait passer par les améliorations suivantes : 
+•	Compléter les données avec des features pouvant impacter la phénologie. (Cépage, taux d’humidité, taux journalier de GDD pour représenter la vitesse de réchauffement, précipitations cumulées, amplitude thermique jour/nuit…)
+•	Travailler à un dataset de phénologie couvrant une période temporelle plus large pour une meilleure compréhension de l’impact du changement climatique sur la phénologie.
+•	L’approche en Machine Learning a pour inconvénient d’être moins explicable qu’une méthode traditionnelle GDD. L’utilisation d’une librairie comme Shap permettrait de d’expliquer chaque prédiction individuelle.
 
-D’autre part, afin que le modèle puisse effectuer une prédiction à tout moment de la saison en cours j’ai intégré des données qui bruitent le signal à apprendre. Ainsi dans le cadre d’une floraison à J=150, les 150 premières lignes créées dans le jeu de données (J1 -> J150) sont utiles pour l’apprentissage, mais les 215 suivantes (J151 -> J365) ajoutent un bruit qui n’a d’intérêt que pour continuer d’obtenir des « prévisions » cohérentes une fois la date de floraison passée. Retreindre les données aux jours précédant la floraison permettrait certainement d’obtenir des résultats plus précis en amont.
-
-Les données de phénologie du jeu de données pour la vigne couvrent la période 2015 à 2022. Si leur répartition spatiale sur le territoire français permet une bonne généralisation leur échelle de temps est insuffisante pour permettre une bonne prise en compte des phénomènes de changement climatique. Compléter ce dataset avec d’autres sources de données permettrait de meilleurs résultats.
-
-Enfin l'analyse des performances du modèle de Gradient Boosting validé au cours de l'étude montre un surapprentissage modéré. Il pourrait être intéressant de travailler à réduire ce surapprentissage en recherchant d'autres hyperparamètres ou en entraînant le modèle sur davantage de données. 
