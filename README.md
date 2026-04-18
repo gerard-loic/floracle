@@ -215,12 +215,9 @@ L’indicateur de performance RMSE est le plus pertinent. En effet, se tromper d
 ## Analyse des performances du modèle de Forêt aléatoire
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/randomforest-distribution-erreurs.png?raw=true)
 Le modèle présente de bonnes caractéritiques de biai : en moyenne, il ne surestime ni ne sous-estime systématiquement. C'est une propriété intéressante pour un modèle de prédiction phénologique.
-La forme ressemble à une cloche centrée autour de 0, ce qui indique un comportement cohérent et sans dérive systématique. La distribution semble légèrement leptokurtique (pic prononcé, queues non négligeables) : le modèle est souvent bon, mais commet parfois des erreurs importantes. Ce n'est pas une distribution strictement gaussienne.
 
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/randomforest-overfitting.png?raw=true)
-L'écart entre les performances en entraînement et validation fait apparaitre un risque d'overfitting modéré:  le modèle a mémorisé une partie du bruit d'entraînement, sans pour autant s'effondrer en validation.
-Le RMSE qui grimpe plus fort que la MAE (+40% vs +44% — proches ici) confirme que la validation produit davantage d'erreurs importantes que le train, ce qui est visible sur le troisième graphique, ou pour le dire autrement le modèle gère moins bien les cas rares, ce qui est attendu. Une évolution des modèles pourrait consister à chercher à réduire ce surapprentissage en entraînant les modèles avec davantage de données ou avec d'autres hyperparamètres. 
-
+L'écart entre les performances en entraînement et validation fait apparaitre un risque d'overfitting léger qu'on pourrait chercher à réduire en limitant la profondeur des arbres.
 
 Afin de valider l’intérêt de la démarche en Machine Learning par rapport aux approches traditionnelles j’ai appliqué la méthode GDD (la plus employée) aux données du jeu de validation et comparé les performances avec le meilleur modèle : 
 Voici les performances constatées : 
