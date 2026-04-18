@@ -1,4 +1,3 @@
-
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/planche-logo-floracle.jpg?raw=true)
 
 # Définition des objectifs
@@ -195,30 +194,30 @@ Le préprocessing des données intègre une normalisation (Standard Scaler) sur 
 # Evaluation
 
 ## Performances des modèles
-| Modèle | Inférence (en ms) | Entrainement (en s) | MAE | RMSE | % à +/- 3 j | % à +/- 7 j |
-| ------ | ----------------- | ------------------- | --- | ---- | ----------- | ----------- |
-| Régr. linéaire | 8 | 2 | 9.348111 | 10.141592 | 27.06 | 53.08 |
-| Régr. Ridge L2 | 1 | 2 | 9.348114 | 10.140907 | 27.05 | 53.08 |
-| Régr. Lasso L1 | 1 | 2 | 75.418229 | 75.556915 | 2.31 | 5.40 |
-| Régr. ElasticNet | 1 | 2 | 26.572929 | 27.193822 | 10.70 | 22.58 |
-| KNN | 4 | 7.3 | 5.090163 | 9.020979 | 31.34 | 63.50 |
-| Arbre de décision | 1 | 35 | 3.187009 | 9.027631 | 36.32 | 66.16 |
-| Forêt aléatoire | 105 | 2581 | 3.413736 | 7.036325 | 38.49 | 71.14 |
-| Gradient Boosting | 2 | 1776 | 4.604754 | 6.457499 | 42.76 | 74.35 |
+| Modèle | Inférence (en ms) | MAE | RMSE | % à +/- 3 j | % à +/- 7 j |
+|---|---|---|---|---|---|
+| Régr. linéaire | 8 | 6.598598 | 8.384724 | 30,67 | 59,98 |
+| Régr. Ridge L2 | 1 | 6.598599 | 8.384724 | 30,67 | 59,98 |
+| Régr. Lasso L1 | 1 | 6.584328 | 8.397995 | 31,02 | 60,31 |
+| Régr. ElasticNet | 1 | 7.158833 | 9.039506 | 26,21 | 57,22 |
+| KNN | 4 | 6.219669 | 8.120785 | 29,79 | 67,49 |
+| Arbre de décision | 1 | 5.945374 | 7.644293 | 30,37 | 73,07 |
+| Forêt aléatoire | 105 | 5.022680 | 6.446312 | 35,48 | 75,36 |
+| Gradient Boosting | 2 | 5.333548 | 6.717495 | 31,96 | 72,47 |
 
 L’indicateur de performance RMSE est le plus pertinent. En effet, se tromper de 6 jours sur la date de floraison, c'est acceptable. Se tromper de 15 jours, c'est potentiellement manquer complètement la période favorable de pose des hausses. Le RMSE, en pénalisant quadratiquement, reflète cette réalité : les grandes erreurs sont disproportionnellement problématiques.
 
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/comparaison-mae.png?raw=true)
 ![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/comparaison-rmse.png?raw=true)
 
-L’analyse des performances des modèles permets d’identifier le modèle de Gradient Boosting comme celui avec la plus grande efficacité. De fait, même si la métrique MAE est meilleure sur la forêt aléatoire, l’indicateur de RMSE donne la priorité au Gradient Boosting, or celle-ci est la plus adaptée pour un modèle de phénologie. En effet, se tromper de 2 jours sur la date de floraison, c'est acceptable. Se tromper de 15 jours, c'est potentiellement manquer complètement la période favorable de pose des hausses. Le RMSE, en pénalisant quadratiquement, reflète cette réalité : les grandes erreurs sont disproportionnellement problématiques.
+ L’indicateur de RMSE désigne le modèle de Forêt Aléatoire comme celui présentant la plus grande efficacité. L'indicateur RMSE le plus impactant sur notre problématique. En effet, se tromper de 2 jours sur la date de floraison, c'est acceptable. Se tromper de 15 jours, c'est potentiellement manquer complètement la période favorable de pose des hausses. Le RMSE, en pénalisant quadratiquement, reflète cette réalité : les grandes erreurs sont disproportionnellement problématiques.
 
-## Analyse des performances du modèle de Gradient Boosting
-![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/gradientboosting-distribution-erreurs.png?raw=true)
+## Analyse des performances du modèle de Forêt aléatoire
+![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/randomforest-distribution-erreurs.png?raw=true)
 Le modèle présente de bonnes caractéritiques de biai : en moyenne, il ne surestime ni ne sous-estime systématiquement. C'est une propriété intéressante pour un modèle de prédiction phénologique.
 La forme ressemble à une cloche centrée autour de 0, ce qui indique un comportement cohérent et sans dérive systématique. La distribution semble légèrement leptokurtique (pic prononcé, queues non négligeables) : le modèle est souvent bon, mais commet parfois des erreurs importantes. Ce n'est pas une distribution strictement gaussienne.
 
-![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/gradientboosting-overfitting.png?raw=true)
+![alt text](https://github.com/gerard-loic/floracle/blob/master/notebooks/images/randomforest-overfitting.png?raw=true)
 L'écart entre les performances en entraînement et validation fait apparaitre un risque d'overfitting modéré:  le modèle a mémorisé une partie du bruit d'entraînement, sans pour autant s'effondrer en validation.
 Le RMSE qui grimpe plus fort que la MAE (+40% vs +44% — proches ici) confirme que la validation produit davantage d'erreurs importantes que le train, ce qui est visible sur le troisième graphique, ou pour le dire autrement le modèle gère moins bien les cas rares, ce qui est attendu. Une évolution des modèles pourrait consister à chercher à réduire ce surapprentissage en entraînant les modèles avec davantage de données ou avec d'autres hyperparamètres. 
 
@@ -227,8 +226,8 @@ Afin de valider l’intérêt de la démarche en Machine Learning par rapport au
 Voici les performances constatées : 
 | Modèle | MAE | RMSE |
 | ------ | ----------------- | ------------------- |
-| Modèle GDD | 8.13 | 10.32 |
-| Gradient Boosting | 4.89 | 6.47 |
+| Méthode GDD | 7.06 | 9.17 |
+| Gradient Boosting | 4.95 | 6.35 |
 
 Pour mieux appréhender ces résultats il convient de prendre en considération :
 •	La variance biologique : sur un même ensemble de plantations des variances de plus de 5 jours peuvent être constatés dans la floraison. Ceci s’explique par des facteurs difficilement mesurables : âge de la vigne, composition des sols, microtopographie…
